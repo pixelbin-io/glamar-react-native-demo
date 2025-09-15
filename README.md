@@ -1,97 +1,192 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Glam React Native App
 
-# Getting Started
+## Overview
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+This is a React Native application that integrates a WebView to load the GlamAR SDK. The WebView requests camera permissions and interacts with the SDK for skin analysis and other AR-based functionalities.
 
-## Step 1: Start Metro
+## Features
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- Loads GlamAR SDK inside a WebView
+- Requests camera permissions on Android
+- Handles WebView messages to track events
+- Sends initialization data to the SDK
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Project Structure
 
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```
+root
+├── App.js  # Main entry point of the app
+├── WebViewScreen.js  # WebView component handling SDK interactions
+├── android/
+│   ├── app/
+│   │   ├── src/
+│   │   │   ├── main/
+│   │   │   │   ├── java/com/glam/MainActivity.java  # Handles WebView permissions
+│   │   │   │   ├── AndroidManifest.xml  # Permissions configuration
+│   ├── local.properties  # Android SDK path configuration
+├── package.json
+└── README.md
 ```
 
-## Step 2: Build and run your app
+## Setup and Installation
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### Prerequisites
 
-### Android
+- Node.js
+- React Native CLI
+- Android Studio (for Android development)
 
-```sh
-# Using npm
-npm run android
+### Installation Steps
 
-# OR using Yarn
-yarn android
+1. Install dependencies:
+   ```sh
+   npm install
+   ```
+2. Configure the Android SDK path:
+   - Open `android/local.properties`
+   - Replace the username in the following line with your own:
+     ```
+     sdk.dir = /users/YOUR_USERNAME/library/android/sdk
+     ```
+3. Ensure required permissions are added in `AndroidManifest.xml`:
+   ```xml
+   <uses-permission android:name="android.permission.CAMERA"/>
+   <uses-feature android:name="android.hardware.camera" android:required="true"/>
+   ```
+4. Start the Metro bundler:
+   ```sh
+   npx react-native start
+   ```
+5. Build and run the app on Android:
+   ```sh
+   npx react-native run-android
+   ```
+
+## WebView Integration
+
+The WebView loads the GlamAR SDK and communicates via `window.postMessage`. The SDK events are handled in `onMessage`.
+
+### Camera Permission Handling
+
+- On Android, camera permission is requested using `PermissionsAndroid`.
+- In `MainActivity.java`, `onPermissionRequest` grants camera access for WebView.
+
+### Initialization Payload
+
+When the WebView loads, the following payload is sent to initialize the SDK:
+
+```json
+{
+  "type": "initialize",
+  "payload": {
+    "apiKey": "YOUR_API_KEY",
+    "platform": "react_native",
+    "category": "skinanalysis",
+    "openLiveOnInit": true,
+    "skinAnalysis": {
+      "version": "GlamGen",
+      "defaultFilter": true,
+      "startScreen": true
+    }
+  }
+}
 ```
 
-### iOS
+### WebView Message Handling
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+The WebView listens for messages from the SDK using `handleMessage`:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```javascript
+const handleMessage = event => {
+  const message = event.nativeEvent.data;
+  try {
+    const parsedMessage = JSON.parse(message);
+    if (parsedMessage.type === 'loaded') {
+      console.log('on log event logged with loaded type');
+    }
+    if (parsedMessage.type === 'opened') {
+      console.log('on log event logged with opened type');
+    }
+    if (parsedMessage.type === 'liveMode-started') {
+      console.log('on log event logged with liveMode-started type');
+    }
+    if (parsedMessage.type === 'camera-opened') {
+      console.log('on log event logged with camera-opened type');
+    }
+    if (parsedMessage.type === 'skin-analysis') {
+      console.log('on log event logged with skin-analysis type', type, payload);
+    }
+  } catch (e) {
+    console.warn('Invalid message from WebView:', message);
+  }
+};
 ```
 
-Then, and every time you update your native dependencies, run:
+### WebView Events
 
-```sh
-bundle exec pod install
-```
+#### `loaded`
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+- Fired when the GlamAR module is initiated and the SDK proceeds with the loading process.
 
-```sh
-# Using npm
-npm run ios
+#### `opened`
 
-# OR using Yarn
-yarn ios
-```
+- Fired when the GlamAR module is opened.
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+#### `closed`
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+- Fired when the GlamAR module is closed.
 
-## Step 3: Modify your app
+#### `camera-opened`
 
-Now that you have successfully run the app, let's make changes!
+- Fired when the GlamAR module camera is opened.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+#### `camera-closed`
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+- Fired when the GlamAR module camera is closed.
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+#### `camera-failed`
 
-## Congratulations! :tada:
+- Fired when the GlamAR module camera is failed.
 
-You've successfully run and modified your React Native App. :partying_face:
+#### `error`
 
-### Now what?
+- Fired anytime an error occurs.
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+#### `subscription-invalid`
 
-# Troubleshooting
+- Fired when the subscription is found to be invalid or expired.
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+#### `skin-analysis`
 
-# Learn More
+- Fired when skin analysis is triggered.
+- **Payload:**
+  ```json
+  {
+    "options": "result | error | position | distance",
+    "value": "Relevant data associated with the options field"
+  }
+  ```
 
-To learn more about React Native, take a look at the following resources:
+## Troubleshooting
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+### WebView Not Loading
+
+- Ensure the device has an active internet connection.
+- Check if the SDK URL (`https://www.glamar.io/sdk`) is accessible.
+
+### Camera Permission Issues
+
+- Verify that camera permission is granted in Android settings.
+- Ensure `onPermissionRequest` in `MainActivity.java` correctly grants camera permissions.
+
+### WebView Communication Not Working
+
+- Use `console.log(event.nativeEvent.data)` inside `handleMessage` to debug messages received from the WebView.
+
+## Contributors
+
+- **Your Name** (Project Maintainer)
+
+## License
+
+This project is licensed under [Your License].
