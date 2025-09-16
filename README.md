@@ -1,4 +1,4 @@
-# Glam React Native App
+# GlamAR React Native Demo App
 
 ## Overview
 
@@ -15,8 +15,7 @@ This is a React Native application that integrates a WebView to load the GlamAR 
 
 ```
 root
-├── App.js  # Main entry point of the app
-├── WebViewScreen.js  # WebView component handling SDK interactions
+├── App.tsx  # Main entry point of the app
 ├── android/
 │   ├── app/
 │   │   ├── src/
@@ -73,106 +72,75 @@ The WebView loads the GlamAR SDK and communicates via `window.postMessage`. The 
 
 ### Initialization Payload
 
-When the WebView loads, the following payload is sent to initialize the SDK:
+Initialize the SDK:
 
-```json
-{
-  "type": "initialize",
-  "payload": {
-    "apiKey": "YOUR_API_KEY",
-    "platform": "react_native",
-    "category": "skinanalysis",
-    "openLiveOnInit": true,
-    "skinAnalysis": {
-      "version": "GlamGen",
-      "defaultFilter": true,
-      "startScreen": true
-    }
-  }
-}
+```js
+GlamAr.init({
+  apiKey: 'Your_API_Key',
+  platform: 'react_native', //required when using react native
+});
 ```
 
-### WebView Message Handling
+### Events Handling
 
-The WebView listens for messages from the SDK using `handleMessage`:
+To Listen the SDK Events.
 
-```javascript
-const handleMessage = event => {
-  const message = event.nativeEvent.data;
-  try {
-    const parsedMessage = JSON.parse(message);
-    if (parsedMessage.type === 'loaded') {
-      console.log('on log event logged with loaded type');
-    }
-    if (parsedMessage.type === 'opened') {
-      console.log('on log event logged with opened type');
-    }
-    if (parsedMessage.type === 'liveMode-started') {
-      console.log('on log event logged with liveMode-started type');
-    }
-    if (parsedMessage.type === 'camera-opened') {
-      console.log('on log event logged with camera-opened type');
-    }
-    if (parsedMessage.type === 'skin-analysis') {
-      console.log('on log event logged with skin-analysis type', type, payload);
-    }
-  } catch (e) {
-    console.warn('Invalid message from WebView:', message);
-  }
+```js
+const photoLoadedSubscription = GlamAr.on('photo-loaded', (data: any) => {
+  console.log('Photo loaded:', data);
+});
+
+const loadedSubscription = GlamAr.on('loaded', (data: any) => {
+  console.log('glamar loaded', data);
+});
+
+// 3) Cleanup on unmount
+return () => {
+  // NativeEventEmitter returns an EmitterSubscription with remove()
+  photoLoadedSubscription?.remove?.();
+  loadedSubscription?.remove?.();
 };
 ```
 
-### WebView Events
+---
 
-#### `loaded`
+## 📡 API Reference
 
-- Fired when the GlamAR module is initiated and the SDK proceeds with the loading process.
+| Method                             | Description                                      |
+| ---------------------------------- | ------------------------------------------------ |
+| `GlamAr.init(config)`              | Initializes the SDK                              |
+| `GlamAr.applySku(skuId)`           | Applies a specific SKU                           |
+| `GlamAr.applyByCategory(category)` | Applies the first SKU from a category            |
+| `GlamAr.snapshot()`                | Captures a snapshot (fires `photo-loaded` event) |
+| `GlamAr.reset()`                   | Clears current applied items                     |
+| `GlamAr.open()` / `close()`        | Opens or closes the live preview mode            |
+| `GlamAr.on(event, cb)`             | Registers event listeners                        |
 
-#### `opened`
+---
 
-- Fired when the GlamAR module is opened.
+## 🔔 Supported Events
 
-#### `closed`
+| Event                  | Description                  |
+| ---------------------- | ---------------------------- |
+| `loaded`               | SDK initialized              |
+| `opened`, `closed`     | Widget opened or closed      |
+| `photo-loaded`         | Snapshot captured            |
+| `camera-opened`        | Camera successfully accessed |
+| `camera-closed`        | Camera stopped               |
+| `camera-failed`        | Error accessing camera       |
+| `subscription-invalid` | API key expired or invalid   |
+| `skin-analysis`        | Skin analysis data received  |
+| `error`                | Any error from SDK           |
 
-- Fired when the GlamAR module is closed.
+---
 
-#### `camera-opened`
-
-- Fired when the GlamAR module camera is opened.
-
-#### `camera-closed`
-
-- Fired when the GlamAR module camera is closed.
-
-#### `camera-failed`
-
-- Fired when the GlamAR module camera is failed.
-
-#### `error`
-
-- Fired anytime an error occurs.
-
-#### `subscription-invalid`
-
-- Fired when the subscription is found to be invalid or expired.
-
-#### `skin-analysis`
-
-- Fired when skin analysis is triggered.
-- **Payload:**
-  ```json
-  {
-    "options": "result | error | position | distance",
-    "value": "Relevant data associated with the options field"
-  }
-  ```
+Detailed documentation available at https://www.glamar.io/docs/
 
 ## Troubleshooting
 
 ### WebView Not Loading
 
 - Ensure the device has an active internet connection.
-- Check if the SDK URL (`https://www.glamar.io/sdk`) is accessible.
 
 ### Camera Permission Issues
 
