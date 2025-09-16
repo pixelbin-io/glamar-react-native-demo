@@ -129,7 +129,6 @@ return () => {
 | `camera-closed`        | Camera stopped               |
 | `camera-failed`        | Error accessing camera       |
 | `subscription-invalid` | API key expired or invalid   |
-| `skin-analysis`        | Skin analysis data received  |
 | `error`                | Any error from SDK           |
 
 ---
