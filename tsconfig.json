@@ -1,17 +1,3 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "lib": ["esnext"],
-    "jsx": "react-jsx", // 👈 this tells TS to compile JSX
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "types": ["react", "react-native"]
-  },
-  "include": ["src", "App.tsx", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "extends": "@react-native/typescript-config/tsconfig.json"
 }

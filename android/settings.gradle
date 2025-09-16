@@ -1,17 +1,6 @@
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    // 👇 This tells Gradle to look inside node_modules
-    includeBuild("../node_modules/@react-native/gradle-plugin")
-}
-
-plugins {
-    // 👇 No version here — resolved from node_modules
-    id("com.facebook.react.settings")
-}
-
-rootProject.name = "glam"
-include(":app")
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'glam'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
